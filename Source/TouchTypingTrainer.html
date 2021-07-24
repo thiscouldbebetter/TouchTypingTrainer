@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title>This Could Be Better - Touch-Typing Trainer</title>
+    <link rel="stylesheet" type="text/css" href="default.css">
+    </style>
+  </head>
+  
+<body onload="Session.Instance().start();" onkeydown="body_KeyDown(event);">
+
+<h3>Touch Typing Trainer</h3>
+<p>A touch-typing trainer implemented in JavaScript.</p>
+
+<div id="divUI">
+	<div>
+		<label>Lesson:</label></br>
+		<select id="selectLesson" onchange="selectLesson_Changed(this);"></select>
+		<button onclick="buttonLessonRestart_Clicked();">Restart</button>
+	</div><br />
+	<div>
+		<label>Sequence to Type:</label><br/>
+		<input id="inputPresentation" readonly="true" size="48" style="font-family:monospace"></input><br />
+		<br />
+		<label>Type the Sequence Above Here:</label><br />
+		<input id="inputResponse" size="48" style="font-family:monospace"></input><br />
+	</div>
+</div>
+
+<script type="text/javascript">
+
+// UI event handlers.
+
+function body_KeyDown(event)
+{
+	var keyPressed = event.key;
+	if (keyPressed == "Enter")
+	{
+		var inputResponse = document.getElementById("inputResponse");
+		var sequenceResponse = inputResponse.value;
+		Session.Instance().sequencesCompare(sequenceResponse);
+		inputResponse.value = "";
+		inputResponse.focus();
+	}
+}
+
+function buttonLessonRestart_Clicked()
+{
+    Session.Instance().lessonCurrent().start();
+}
+
+function selectLesson_Changed(selectLesson)
+{
+	var lessonSelectedAsOption = selectLesson.selectedOptions[0];
+	var lessonName = lessonSelectedAsOption.value;
+	Session.Instance().lessonSelectByName(lessonName);
+}
+
+// extensions
+
+function ArrayExtensions()
+{
+	// Extension class.
+}
+{
+	Array.prototype.addLookups = function(keyName)
+	{
+		for (var i = 0; i < this.length; i++)
+		{
+			var element = this[i];
+			var key = element[keyName];
+			this[key] = element;
+		}
+		return this;
+	}
+}
+
+// classes
+
+function Lesson(name, sequencesToPresent)
+{
+	this.name = name;
+	this.sequencesToPresent = sequencesToPresent;
+}
+{
+	// methods
+
+	Lesson.prototype.presentationCurrent = function()
+	{
+		var returnValue;
+
+		var sequenceCurrent = this.sequenceCurrent();
+		if (sequenceCurrent == null)
+		{
+			returnValue = 
+				"Lesson completed in " 
+				+ this.timeToCompleteInSeconds()
+				+ " seconds."
+		}
+		else
+		{
+			returnValue = sequenceCurrent;
+		}
+		return returnValue;
+	}
+
+	Lesson.prototype.sequenceCurrent = function()
+	{
+		return (this.sequenceIndexCurrent == null ? null : this.sequencesToPresent[this.sequenceIndexCurrent]);
+	}
+
+	Lesson.prototype.sequenceCurrentAdvance = function()
+	{
+		this.sequenceIndexCurrent++;
+		if (this.sequenceIndexCurrent >= this.sequencesToPresent.length)
+		{
+			this.timeCompleted = new Date();
+		}
+		this.uiUpdate();
+	}
+
+	Lesson.prototype.sequencesCompare = function(sequenceResponse)
+	{
+		var sequencePresented = this.sequenceCurrent();
+		if (sequencePresented == null || sequenceResponse == sequencePresented)
+		{
+			this.sequenceCurrentAdvance();
+		}
+	}
+
+	Lesson.prototype.start = function()
+	{
+		this.sequenceIndexCurrent = 0;
+		this.timeStarted = new Date();
+		this.timeCompleted = null;
+		this.uiUpdate();
+	}
+
+	Lesson.prototype.timeToCompleteInSeconds = function()
+	{
+		return (this.timeCompleted - this.timeStarted) / 1000;
+	}
+
+	// ui
+
+	Lesson.prototype.uiUpdate = function()
+	{
+		var selectLesson = document.getElementById("selectLesson");
+		selectLesson.value = this.name;
+
+		var inputPresentation = document.getElementById("inputPresentation");
+		var presentationCurrent = this.presentationCurrent();
+		inputPresentation.value = presentationCurrent;
+
+		var inputResponse = document.getElementById("inputResponse");
+		inputResponse.focus();
+	}
+}
+
+function LessonBuilder(name, build)
+{
+	this.name = name;
+	this.build = build;
+}
+{
+	LessonBuilder.Instances = function()
+	{
+		if (LessonBuilder._Instances == null)
+		{
+			LessonBuilder._Instances = new LessonBuilder_Instances();
+		}
+		return LessonBuilder._Instances;
+	}
+
+	function LessonBuilder_Instances()
+	{
+		var numberOfSequences = 16;
+
+		this.HomeRowAtRestLeft4 = new LessonBuilder_Generic
+		(
+			"Home Row at Rest - Left - 4 Chars",
+			"asdf", // charsToChooseFrom
+			null, // charsRequired
+			numberOfSequences,
+			4 // charsPerSequence
+		); 
+
+		this.HomeRowAtRestRight4 = new LessonBuilder_Generic
+		(
+			"Home Row at Rest - Right - 4 Chars",
+			"jkl;", // charsToChooseFrom
+			null, // charsRequired
+			numberOfSequences,
+			4 // charsPerSequence
+		); 
+
+		this.HomeRowAtRest4 = new LessonBuilder_Generic
+		(
+			"Home Row at Rest - 4 Chars",
+			"asdfjkl;", // charsToChooseFrom
+			null, // charsRequired
+			numberOfSequences,
+			4 // charsPerSequence
+		);
+
+		this.HomeRowAndOneAboveLeft4 = new LessonBuilder_Generic
+		(
+			"Home Row and One Above - Left - 4 Chars",
+			"asdf", // charsToChooseFrom
+			"qwer", // charsRequired
+			numberOfSequences,
+			4 // charsPerSequence
+		);
+
+		this.HomeRowAndOneAboveRight4 = new LessonBuilder_Generic
+		(
+			"Home Row and One Above - Right - 4 Chars",
+			"jkl;", // charsToChooseFrom
+			"uiop", // charsRequired
+			numberOfSequences,
+			4 // charsPerSequence
+		);
+
+		this.HomeRowAndOneAbove4 = new LessonBuilder_Generic
+		(
+			"Home Row and One Above - 4 Chars",
+			"asdfjkl;", // charsToChooseFrom
+			"qweruiop", // charsRequired
+			numberOfSequences,
+			4 // charsPerSequence
+		);
+
+		this.HomeRowAndAbove4 = new LessonBuilder_Generic
+		(
+			"Home Row and Above - 4 Chars",
+			"asdfjkl;qweruiop", // charsToChooseFrom
+			null, // charsRequired
+			numberOfSequences,
+			4 // charsPerSequence
+		);
+
+		this.HomeRowAndOneReachLeft4 = new LessonBuilder_Generic
+		(
+			"Home Row with Reach - Left - 4 Chars",
+			"asdf", // charsToChooseFrom
+			"g", // charsRequired
+			numberOfSequences,
+			4 // charsPerSequence
+		);
+
+		this.HomeRowAndOneReachRight4 = new LessonBuilder_Generic
+		(
+			"Home Row with One Reach - Right - 4 Chars",
+			"jkl;",
+			"h",
+			numberOfSequences,
+			4 // charsPerSequence
+		);
+
+		this.HomeRowAndOneReach4 = new LessonBuilder_Generic
+		(
+			"Home Row with One Reach - 4 Chars",
+			"asdfjkl;",
+			"gh",
+			numberOfSequences,
+			4 // charsPerSequence
+		);
+
+		this.HomeRowAndReaches4 = new LessonBuilder_Generic
+		(
+			"Home Row with Reaches - 4 Chars",
+			"asdfghjkl;",
+			numberOfSequences,
+			4 // charsPerSequence
+		);
+
+		this.HomeRowAndOneBelowLeft4 = new LessonBuilder_Generic
+		(
+			"Home Row and One Below - Left - 4 Chars",
+			"asdf", // charsToChooseFrom
+			"zxcv", // charsRequired
+			numberOfSequences,
+			4 // charsPerSequence
+		);
+
+		this.HomeRowAndOneBelowRight4 = new LessonBuilder_Generic
+		(
+			"Home Row and One Below - Right - 4 Chars",
+			"jkl;", // charsToChooseFrom
+			"m,./", // charsRequired
+			numberOfSequences,
+			4 // charsPerSequence
+		);
+
+		this.HomeRowAndOneBelow4 = new LessonBuilder_Generic
+		(
+			"Home Row and One Below - 4 Chars",
+			"asdfjkl;", // charsToChooseFrom
+			"zxcvm,./", // charsRequired
+			numberOfSequences,
+			4 // charsPerSequence
+		);
+
+		this.HomeRowAndBelow4 = new LessonBuilder_Generic
+		(
+			"Home Row and Below - 4 Chars",
+			"asdfjkl;zxcvm,./", // charsToChooseFrom
+			null, // charsRequired
+			numberOfSequences,
+			4 // charsPerSequence
+		);
+
+		this.HomeRowAndOneReachUpLeft4 = new LessonBuilder_Generic
+		(
+			"Home Row and One Reach Up - Left - 4 Chars",
+			"asdf", // charsToChooseFrom
+			"t", // charsRequired
+			numberOfSequences,
+			4 // charsPerSequence
+		);
+
+		this.HomeRowAndOneReachUpRight4 = new LessonBuilder_Generic
+		(
+			"Home Row and One Reach Up - Right - 4 Chars",
+			"jkl;", // charsToChooseFrom
+			"y", // charsRequired
+			numberOfSequences,
+			4 // charsPerSequence
+		);
+
+		this.HomeRowAndOneReachUp4 = new LessonBuilder_Generic
+		(
+			"Home Row and One Reach Up - 4 Chars",
+			"asdfjkl;", // charsToChooseFrom
+			"ty", // charsRequired
+			numberOfSequences,
+			4 // charsPerSequence
+		);
+
+		this.HomeRowAndReachesUp4 = new LessonBuilder_Generic
+		(
+			"Home Row and Reaches Up - 4 Chars",
+			"asdfjkl;ty", // charsToChooseFrom
+			null, // charsRequired
+			numberOfSequences,
+			4 // charsPerSequence
+		);
+
+		this.HomeRowAndOneReachDownLeft4 = new LessonBuilder_Generic
+		(
+			"Home Row and One Reach Down - Left - 4 Chars",
+			"asdf", // charsToChooseFrom
+			"v", // charsRequired
+			numberOfSequences,
+			4 // charsPerSequence
+		);
+
+		this.HomeRowAndOneReachDownRight4 = new LessonBuilder_Generic
+		(
+			"Home Row and One Reach Down - Right - 4 Chars",
+			"jkl;", // charsToChooseFrom
+			"b", // charsRequired
+			numberOfSequences,
+			4 // charsPerSequence
+		);
+
+		this.HomeRowAndOneReachDown4 = new LessonBuilder_Generic
+		(
+			"Home Row and One Reach Down - 4 Chars",
+			"asdfjkl;", // charsToChooseFrom
+			"vb", // charsRequired
+			numberOfSequences,
+			4 // charsPerSequence
+		);
+
+		this.HomeRowAndReachesDown4 = new LessonBuilder_Generic
+		(
+			"Home Row and Reaches Down - 4 Chars",
+			"asdfjkl;vb", // charsToChooseFrom
+			null, // charsRequired
+			numberOfSequences,
+			4 // charsPerSequence
+		);
+
+		this.Left4 = new LessonBuilder_Generic
+		(
+			"Left - 4 Chars",
+			"qwertasdfgzxcvb", // charsToChooseFrom
+			null, // charsRequired
+			numberOfSequences,
+			4 // charsPerSequence
+		);
+
+		this.Right4 = new LessonBuilder_Generic
+		(
+			"Right - 4 Chars",
+			"yuiophjkl;nm,./", // charsToChooseFrom
+			null, // charsRequired
+			numberOfSequences,
+			4 // charsPerSequence
+		);
+
+		this.All4 = new LessonBuilder_Generic
+		(
+			"All - 4 Chars",
+			"qwertyuiopasdfghjkl;zxcvbnm,.", // charsToChooseFrom
+			null, // charsRequired
+			numberOfSequences,
+			4 // charsPerSequence
+		);
+
+		this._All = 
+		[
+			this.HomeRowAtRestLeft4,
+			this.HomeRowAtRestRight4,
+			this.HomeRowAtRest4,
+
+			this.HomeRowAndOneAboveLeft4,
+			this.HomeRowAndOneAboveRight4,
+			this.HomeRowAndOneAbove4,
+			this.HomeRowAndAbove4,
+
+			this.HomeRowAndOneReachLeft4,
+			this.HomeRowAndOneReachRight4,
+			this.HomeRowAndOneReach4,
+			this.HomeRowAndReaches4,
+
+			this.HomeRowAndOneBelowLeft4,
+			this.HomeRowAndOneBelowRight4,
+			this.HomeRowAndOneBelow4,
+			this.HomeRowAndBelow4,
+
+			this.HomeRowAndOneReachUpLeft4,
+			this.HomeRowAndOneReachUpRight4,
+			this.HomeRowAndOneReachUp4,
+			this.HomeRowAndReachesUp4,
+
+			this.HomeRowAndOneReachDownLeft4,
+			this.HomeRowAndOneReachDownRight4,
+			this.HomeRowAndOneReachDown4,
+			this.HomeRowAndReachesDown4,
+
+			this.Left4,
+			this.Right4,
+			this.All4,
+		];
+	}
+
+	// methods
+
+	LessonBuilder.lessonsBuildFromMany = function(builders)
+	{
+		var returnValues = [];
+		for (var i = 0; i < builders.length; i++)
+		{
+			var builder = builders[i];
+			var lesson = builder.build(builder);
+			returnValues.push(lesson);
+		}
+		return returnValues;
+	}
+}
+
+function LessonBuilder_Generic
+(
+	name, charsToChooseFrom, charsRequired, numberOfSequences, charsPerSequence
+)
+{
+	this.name = name;
+	this.charsToChooseFrom = charsToChooseFrom;
+	this.charsRequired = charsRequired;
+	this.numberOfSequences = numberOfSequences;
+	this.charsPerSequence = charsPerSequence;
+}
+{
+	LessonBuilder_Generic.prototype.build = function(builder)
+	{
+		var sequences = [];
+
+		for (var i = 0; i < this.numberOfSequences; i++)
+		{
+			var sequence = "";
+
+			for (var j = 0; j < this.charsPerSequence; j++)
+			{
+				var charIndexRandom = Math.floor
+				(
+					Math.random() * this.charsToChooseFrom.length
+				);
+
+				var charRandom = 
+					this.charsToChooseFrom[charIndexRandom];
+
+				sequence += charRandom;
+			}
+
+			if (this.charsRequired != null)
+			{
+				var charIndexRandom = Math.floor
+				(
+					Math.random() * this.charsRequired.length
+				);
+
+				var charRequired = this.charsRequired[charIndexRandom];
+
+				var indexToReplaceAt = Math.floor
+				(
+					Math.random() * this.charsPerSequence
+				);
+
+				sequence = 
+					sequence.substr(0, indexToReplaceAt)
+					+ charRequired
+					+ sequence.substr(indexToReplaceAt + 1);
+			}
+
+			sequences.push(sequence);
+		}
+
+		var returnValue = new Lesson(builder.name, sequences);
+
+		return returnValue;
+	}
+}
+
+function Session(lessons)
+{
+	this.lessons = lessons.addLookups("name");
+	this.start();
+}
+{
+	Session.Instance = function()
+	{
+		if (this._Instance == null)
+		{
+			this._Instance = new Session
+			(
+				LessonBuilder.lessonsBuildFromMany
+				(
+					LessonBuilder.Instances()._All
+				)
+			);
+		}
+
+		return this._Instance;
+	}
+
+	// methods
+
+	Session.prototype.lessonCurrent = function()
+	{
+		return (this.lessonIndexCurrent == null ? null : this.lessons[this.lessonIndexCurrent] );
+	}
+
+	Session.prototype.lessonCurrentAdvance = function()
+	{
+		this.lessonIndexCurrent++;
+		if (this.lessonIndexCurrent >= this.lessons.length)
+		{
+			this.lessonIndexCurrent = null;
+		}
+		else
+		{
+      this.lessonCurrent().start();
+		}
+	}
+
+	Session.prototype.lessonSelectByName = function(lessonName)
+	{
+		var lessonSelected = this.lessons[lessonName];
+		var lessonIndex = this.lessons.indexOf(lessonSelected);
+		this.lessonIndexCurrent = lessonIndex;
+		lessonSelected.start();
+		this.uiUpdate();
+	}
+
+	Session.prototype.presentationCurrent = function()
+	{
+		var returnValue;
+
+		var lessonCurrent = this.lessonCurrent();
+		if (lessonCurrent == null)
+		{
+			returnValue = "All lessons complete!";
+		}
+		else
+		{
+			returnValue = lessonCurrent.presentationCurrent();
+		}
+
+		return returnValue;
+	}
+
+	Session.prototype.sequenceCurrent = function()
+	{
+		return this.lessonCurrent().sequenceCurrent();
+	}
+
+	Session.prototype.sequenceCurrentAdvance = function()
+	{
+		this.lessonCurrent().sequenceCurrentAdvance();
+	}
+
+	Session.prototype.sequencesCompare = function(sequenceResponse)
+	{
+		var lessonCurrent = this.lessonCurrent();
+		if (lessonCurrent == null)
+		{
+			this.lessonIndexCurrent = 0;
+		}
+		else
+		{
+			var sequenceCurrent = lessonCurrent.sequenceCurrent();
+			if (sequenceCurrent == null)
+			{
+				this.lessonCurrentAdvance();
+			}
+			else
+			{
+				lessonCurrent.sequencesCompare(sequenceResponse);
+			}
+			this.uiUpdate();
+		}
+	}
+
+	Session.prototype.start = function()
+	{
+		this.lessonIndexCurrent = 0;
+		this.lessonCurrent().start();
+		this.timeStarted = new Date();
+		this.timeCompleted = null;
+		this.uiUpdate();
+	}
+
+	Session.prototype.timeToCompleteInSeconds = function()
+	{
+		return (this.timeCompleted - this.timeStarted) / 1000;
+	}
+
+	Session.prototype.uiUpdate = function()
+	{
+		var selectLesson = document.getElementById("selectLesson");
+		var selectOptions = selectLesson.options;
+		if (selectOptions.length == 0)
+		{
+			for (var i = 0; i < this.lessons.length; i++)
+			{
+				var lesson = this.lessons[i];
+				var lessonAsSelectOption = document.createElement("option");
+				lessonAsSelectOption.value = lesson.name;
+				lessonAsSelectOption.innerHTML = lesson.name;
+				selectOptions.add(lessonAsSelectOption);
+			}
+		}
+		this.lessonCurrent().uiUpdate();
+	}
+}
+</script>
+
+</body>
+</html>
